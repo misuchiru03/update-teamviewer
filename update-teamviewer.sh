@@ -4,6 +4,9 @@
 RPM=0
 DEB=0
 
+# Set the user's home directory
+USRHOME=`eval echo ~$USER`
+
 # Find out if machine is deb or rpm based
 # DEB test
 /usr/bin/dpkg --search /usr/bin/rpm > /dev/null 2>&1
@@ -60,17 +63,16 @@ echo ''
 # Setting the Teamviewer Filename we will use to download and install
 TV_FILENAME="teamviewer_$NEWESTVERSION_$ARCH.$EXT"
 
-wget $(curl -s https://www.teamviewer.com/en/download/linux/ | grep -8 $NEWESTVERSION | grep linkBlue | grep $ARCH\.$EXT | cut -d'"' -f4) -O ~/Downloads/$TV_FILENAME
+wget $(curl -s https://www.teamviewer.com/en/download/linux/ | grep -8 $NEWESTVERSION | grep linkBlue | grep $ARCH\.$EXT | cut -d'"' -f4) -O $USRHOME/Downloads/$TV_FILENAME
 
 # Install the package
 if [ $EXT == 'deb' ]; then
-	sudo dpkg -i ~/Downloads/$TV_FILENAME
+	sudo dpkg -i $USRHOME/Downloads/$TV_FILENAME
 else
-	sudo rpm -i ~/Downloads/$TV_FILENAME ### Not tested yet.  If you test it, and it doesn't work, please give me some feedback with corrections if you have it.
+	sudo yum install -y $USRHOME/Downloads/$TV_FILENAME ### Not tested yet.  If you test it, and it doesn't work, please give me some feedback with corrections if you have it.
 fi
 sudo teamviewer --daemon enable
 sudo systemctl start teamviewerd
 
-echo ' '
-echo "Teamviewer has been updated.  If you cannot open the Teamviewer GUI, and the Daemon is enabled and running,"
-echo "try apt update && apt -f install to fix broken dependencies."
+echo ''
+echo "Teamviewer has been updated.  If you are still unable to open the GUI, try fixing any broken dependencies."
