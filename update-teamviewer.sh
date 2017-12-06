@@ -67,6 +67,7 @@ if [ $EXT == 'deb' ]; then
 	sudo dpkg -i ~/Downloads/$TV_FILENAME
 else
 	sudo rpm -i ~/Downloads/$TV_FILENAME ### Not tested yet.  If you test it, and it doesn't work, please give me some feedback with corrections if you have it.
+fi
 sudo teamviewer --daemon enable
 sudo systemctl start teamviewerd
 
