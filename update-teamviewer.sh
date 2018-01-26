@@ -139,7 +139,7 @@ else
 	fi
 fi
 sudo teamviewer --daemon enable
-sudo systemctl start teamviewerd
+sudo teamviewer --daemon start
 
 echo ''
 echo "Teamviewer has been updated.  If you are still unable to open the GUI, try fixing any broken dependencies."
