@@ -35,7 +35,7 @@ if [[ `uname -a | egrep "amd64|x86_64"` ]]; then
 		EXT='rpm'
                 ARCH='x86_64'
         fi
-elif [[ `uname -a | egrep "i387|i686"` ]]; then
+elif [[ `uname -a | egrep "i386|i686"` ]]; then
         # 32 bit, now we need the OS
         # testing for rpm
         /usr/bin/rpm -q -f /usr/bin/dpkg > /dev/null 2>&1
