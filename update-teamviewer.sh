@@ -1,46 +1,96 @@
 #!/bin/bash
 
-# Clear the RPM and DEB variables
+# Clear the RPM DEB and OTHER variables
 RPM=0
 DEB=0
+OTHER=0
 
 # Set the user's home directory
 USRHOME=`eval echo ~$USER`
 
-# Find out if machine is deb or rpm based
-# DEB test
-/usr/bin/dpkg --search /usr/bin/rpm > /dev/null 2>&1
-if [ "$?" == "127" ]; then
-        #dpkg does not exist
-        DEB=0
+# Find out if machine is deb rpm or any other based
+# Distro Arch test
+# Arch tests first
+if [[ `uname -a | egrep "amd64|x86_64"` ]]; then
+        # 64 bit, now we need the OS
+        # testing for rpm
+        /usr/bin/rpm -q -f /usr/bin/dpkg > /dev/null 2>&1
+        if [ "$?" == "127" ]; then
+                # RPM does not exist
+                # Test for dpkg
+                /usr/bin/dpkg --search /usr/bin/rpm > /dev/null 2>&1
+                if [ "$?" == "127" ]; then
+                        # DEB does not exist
+                        # Setting as other 64-bit
+                        OTHER=1
+                        EXT='tar.xz'
+                        ARCH='amd64'
+                else
+                        DEB=1
+			EXT='deb'
+                        ARCH='amd64'
+                fi
+        else
+                RPM=1
+		EXT='rpm'
+                ARCH='x86_64'
+        fi
+elif [[ `uname -a | egrep "i387|i686"` ]]; then
+        # 32 bit, now we need the OS
+        # testing for rpm
+        /usr/bin/rpm -q -f /usr/bin/dpkg > /dev/null 2>&1
+        if [ "$?" == "127" ]; then
+                # RPM does not exist
+                # Test for dpkg
+                /usr/bin/dpkg --search /usr/bin/rpm > /dev/null 2>&1
+                if [ "$?" == "127" ]; then
+                        # DEB does not exist
+                        # Setting as other 32 bit
+                        OTHER=1
+                        EXT='tar.xz'
+                        ARCH='i386'
+                else
+                        DEB=1
+			EXT='deb'
+                        ARCH='i386'
+                fi
+        else
+                RPM=1
+		EXT='rpm'
+                ARCH='i686'
+        fi
 else
-        DEB=1
-	# Take this time to set the arch
-	if [ `uname -i` == 'x86_64' ]; then
-		EXT='deb'
-		ARCH='amd64'
-	else
-		EXT='deb'
-		ARCH='i386'
-	fi
+        # Probably ARM, testing for the OS
+        # testing for rpm
+        /usr/bin/rpm -q -f /usr/bin/dpkg > /dev/null 2>&1
+        if [ "$?" == "127" ]; then
+                # RPM does not exist
+                # Test for dpkg
+                /usr/bin/dpkg --search /usr/bin/rpm > /dev/null 2>&1
+                if [ "$?" == "127" ]; then
+                        # DEB does not exist
+                        # Setting as other 64-bit
+                        OTHER=1
+                        EXT='tar.xz'
+                        ARCH='armhf'
+                else
+                        DEB=1
+			EXT='deb'
+                        ARCH='armhf'
+                fi
+        else
+                RPM=1
+		EXT='rpm'
+                ARCH='armv7hl'
+        fi
 fi
 
-# RPM test
-/usr/bin/rpm -q -f /usr/bin/dpkg > /dev/null 2>&1
-if [ "$?" == "127" ]; then
-        #rpm doesn't exist
-        RPM=0
-else
-        RPM=1
-	# Take this time to set the arch
-	if [ `uname -i` = 'x86_64' ];then
-		EXT='rpm'
-		ARCH='x86_64'
-	else
-		EXT='rpm'
-		ARCH='i686'
-	fi	
-fi
+# Remove comment for debugging to test variables
+#echo -e "DEB=$DEB\nRPM=$RPM\nOTHER=$OTHER\nARCH=$ARCH\nEXT=$EXT" && exit
+
+
+# Other distro test
+
 
 # Check the most up-to-date version from teamviewer.com and set variable
 NEWESTVERSION=$(curl -s https://www.teamviewer.com/en/download/linux/ | grep -8 "*\." | grep $EXT | head -n 1 | cut -dv -f2 | cut -d'<' -f1 | cut -d' ' -f1)
@@ -67,9 +117,10 @@ wget $(curl -s https://www.teamviewer.com/en/download/linux/ | grep -8 $NEWESTVE
 
 # Install the package
 if [ $EXT == 'deb' ]; then
-	sudo dpkg -i $USRHOME/Downloads/$TV_FILENAME
+	sudo apt install -y $USRHOME/Downloads/$TV_FILENAME
 else
-	sudo yum install -y $USRHOME/Downloads/$TV_FILENAME ### Not tested yet.  If you test it, and it doesn't work, please give me some feedback with corrections if you have it.
+	sudo yum install -y $USRHOME/Downloads/$TV_FILENAME ### Not tested yet.  If you test it, and it doesn't work, please give me some feedback with corrections
+	### if you have any.
 fi
 sudo teamviewer --daemon enable
 sudo systemctl start teamviewerd
