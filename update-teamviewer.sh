@@ -112,8 +112,10 @@ fi
 echo ''
 
 # Setting the Teamviewer Filename we will use to download and install
-if [[ "$ARCH" =~ ^(arm) ]]
-	TV_FILENAME="teamviewer-host.$ARCH.$EXT"
+if [[ "$ARCH" =~ ^(arm) ]]; then
+	TV_FILENAME="teamviewer-host_$ARCH.$EXT"
+elif [[ `uname -a | grep void` ]]; then
+	TV_FILENAME="teamviewer-host_$ARCH.$EXT"
 else
 	TV_FILENAME="teamviewer_$ARCH.$EXT"
 fi
@@ -136,10 +138,13 @@ else
         if [[ -z `sudo /opt/teamviewer/tv-setup checklibs | grep "All dependencies seem to be satisfied!"` ]]; then
                 echo "You must install the missing dependencies before you can run TeamViewer."
                 exit
+	else
+		sudo /opt/teamviewer/tv-setup install
+		sudo teamviewer daemon enable
+		sudo teamviewer daemon start
+		sudo /opt/teamviewer/tv_bin/teamviewer-config
 	fi
 fi
-sudo teamviewer --daemon enable
-sudo teamviewer --daemon start
 
 echo ''
 echo "Teamviewer has been updated.  If you are still unable to open the GUI, try fixing any broken dependencies."
