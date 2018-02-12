@@ -1,5 +1,28 @@
 #!/bin/bash
 
+# Checking for required commands tar xz wget and curl
+echo -n "Checking for commands..."
+requires=''
+if ! type "tar" >/dev/null 2>&1; then
+        requires="tar:$requires";
+fi
+if ! type "xz" >/dev/null 2>&1; then
+        requires="xz:$requires";
+fi
+if ! type "wget" >/dev/null 2>&1; then
+        requires="wget:$requires";
+fi
+if ! type "curl" >/dev/null 2>&1; then
+        requires="curl:$requires"
+fi
+if [ ! -z $requires ]; then
+        echo "FAIL!"
+        echo -e "The following commands are not installed and this script will fail:\n$(echo -n $requires | sed 's/:/\n/g')\nInstall the required commands then try again. Exiting."
+        exit 0
+else
+        echo "OK"
+fi
+
 # Clear the RPM DEB and OTHER variables
 RPM=0
 DEB=0
@@ -85,26 +108,25 @@ else
         fi
 fi
 
-# Remove comment for debugging to test variables
-#echo -e "DEB=$DEB\nRPM=$RPM\nOTHER=$OTHER\nARCH=$ARCH\nEXT=$EXT" && exit
-
 # Check the most up-to-date version from teamviewer.com and set variable
 # Check ARM version
 if [[ "$ARCH" == "arm" ]]; then
-	NEWESTVERSION=$(curl -s https://www.teamviewer.com/en/download/linux/ | grep -14 $ARCH | head -n 1 | cut -dv -f2 | cut -d'<' -f1 | cut -d' ' -f1)
+        NEWESTVERSION=$(curl -s https://www.teamviewer.com/en/download/linux/ | grep -14 $ARCH | head -n 1 | cut -dv -f2 | cut -d'<' -f1 | cut -d' ' -f1)
 else
-	NEWESTVERSION=$(curl -s https://www.teamviewer.com/en/download/linux/ | grep -8 "*\." | grep $EXT | head -n 1 | cut -dv -f2 | cut -d'<' -f1 | cut -d' ' -f1)
+        NEWESTVERSION=$(curl -s https://www.teamviewer.com/en/download/linux/ | grep -8 "*\." | grep $EXT | head -n 1 | cut -dv -f2 | cut -d'<' -f1 | cut -d' ' -f1)
 fi
 
+LOGVER=$(echo $NEWESTVERSION | cut -d. -f1)
+
 # Check currently installed version and set variable
-CURRENTVERSION=$(teamviewer -version | grep TeamViewer | awk '{ print $4 }')
+CURRENTVERSION=$(teamviewer -version 2>/dev/null | grep TeamViewer | awk '{ print $4 }')
 
 echo -e "Current Version:\t$CURRENTVERSION"
 echo -e "Newest Version: \t$NEWESTVERSION"
 
 if [ "$CURRENTVERSION" \< "$NEWESTVERSION" ]; then
         echo "There is an updated version."
-#       exit 0   ###This line is for debugging purposes
+#       exit 0   ###This line is for debugging purposes--uncomment to test version check
 else
         echo "You already have the most updated version."
         exit 0
@@ -113,37 +135,38 @@ echo ''
 
 # Setting the Teamviewer Filename we will use to download and install
 if [[ "$ARCH" =~ ^(arm) ]]; then
-	TV_FILENAME="teamviewer-host_$ARCH.$EXT"
+        TV_FILENAME="teamviewer-host_$ARCH.$EXT"
 elif [[ `uname -a | grep void` ]]; then
-	TV_FILENAME="teamviewer-host_$ARCH.$EXT"
+        TV_FILENAME="teamviewer-host_$ARCH.$EXT"
 else
-	TV_FILENAME="teamviewer_$ARCH.$EXT"
+        TV_FILENAME="teamviewer_$ARCH.$EXT"
 fi
 
-wget $(curl -s https://www.teamviewer.com/en/download/linux/ | grep -8 "$NEWESTVERSION" | grep $TV_FILENAME | cut -d'"' -f4) -O $USRHOME/Downloads/$TV_FILENAME
+# Remove comment for debugging
+#echo -e "TV_FILENAME=$TV_FILENAME\nNEWESTVERSION=$NEWESTVERSION\nUSRHOME=$USRHOME" && exit
+
+wget $(curl -s https://www.teamviewer.com/en/download/linux/ | grep $TV_FILENAME | cut -d'"' -f4) -O $USRHOME/Downloads/$TV_FILENAME
 
 # Install the package
 if [ $EXT == 'deb' ]; then
         sudo apt install -y $USRHOME/Downloads/$TV_FILENAME
 elif [ $EXT == 'rpm' ]; then
         sudo yum install -y $USRHOME/Downloads/$TV_FILENAME
-	### Not tested yet.  If you test it, and it doesn't work, please give me some feedback with corrections
+        ### Not tested yet.  If you test it, and it doesn't work, please give me some feedback with corrections
         ### if you have any.
 else
-	### Also not tested yet.  If you test it, and it doesn't work, please give me some feedback with corrections
-        ### if you have any.
-        sudo tar xvJf $USRHOME/Downloads/$TV_FILENAME -C /opt/
-        sudo ln -s /opt/teamviewer/teamviewer /usr/bin/teamviewer
-        sudo /opt/teamviewer/tv-setup checklibs
-        if [[ -z `sudo /opt/teamviewer/tv-setup checklibs | grep "All dependencies seem to be satisfied!"` ]]; then
-                echo "You must install the missing dependencies before you can run TeamViewer."
+        tar xvJf $USRHOME/Downloads/$TV_FILENAME
+        sudo mkdir -p /var/log/teamviewer$LOGVER
+        sudo $USRHOME/Downloads/teamviewer/tv-setup checklibs
+        if [[ -z `sudo $USRHOME/Downloads/teamviewer/tv-setup checklibs | grep "All dependencies seem to be satisfied!"` ]]; then
+                echo -e "Repo names for the required dependencies may have a different name than that given here."
                 exit
-	else
-		sudo /opt/teamviewer/tv-setup install
-		sudo teamviewer daemon enable
-		sudo teamviewer daemon start
-		sudo /opt/teamviewer/tv_bin/teamviewer-config
-	fi
+        else
+                sudo $USRHOME/Downloads/teamviewer/tv-setup install
+                sudo teamviewer daemon enable
+                sudo teamviewer daemon start
+                sudo $USRHOME/Downloads/teamviewer/tv_bin/teamviewer-config
+        fi
 fi
 
 echo ''
