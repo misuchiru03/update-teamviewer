@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Checking for required commands tar xz wget and curl
 echo -n "Checking for commands..."
@@ -37,12 +37,10 @@ USRHOME=`eval echo ~$USER`
 if [[ `uname -a | egrep "amd64|x86_64"` ]]; then
         # 64 bit, now we need the OS
         # testing for rpm
-        /usr/bin/rpm -q -f /usr/bin/dpkg > /dev/null 2>&1
-        if [ "$?" == "127" ]; then
+        if [ ! -x "$(which rpm 2>&1>/dev/null)" ]; then
                 # RPM does not exist
                 # Test for dpkg
-                /usr/bin/dpkg --search /usr/bin/rpm > /dev/null 2>&1
-                if [ "$?" == "127" ]; then
+                if [ ! -x "$(which dpkg 2>&1>/dev/null)" ]; then
                         # DEB does not exist
                         # Setting as other 64-bit
                         OTHER=1
@@ -61,12 +59,10 @@ if [[ `uname -a | egrep "amd64|x86_64"` ]]; then
 elif [[ `uname -a | egrep "i386|i686"` ]]; then
         # 32 bit, now we need the OS
         # testing for rpm
-        /usr/bin/rpm -q -f /usr/bin/dpkg > /dev/null 2>&1
-        if [ "$?" == "127" ]; then
+        if [ ! -x "$(which rpm 2>&1>/dev/null)" ]; then
                 # RPM does not exist
                 # Test for dpkg
-                /usr/bin/dpkg --search /usr/bin/rpm > /dev/null 2>&1
-                if [ "$?" == "127" ]; then
+                if [ ! -x "$(which dpkg 2>&1>/dev/null)" ]; then
                         # DEB does not exist
                         # Setting as other 32 bit
                         OTHER=1
@@ -85,12 +81,10 @@ elif [[ `uname -a | egrep "i386|i686"` ]]; then
 else
         # Probably ARM, testing for the OS
         # testing for rpm
-        /usr/bin/rpm -q -f /usr/bin/dpkg > /dev/null 2>&1
-        if [ "$?" == "127" ]; then
+        if [ ! -x "$(which rpm 2>&1>/dev/null)" ]; then
                 # RPM does not exist
                 # Test for dpkg
-                /usr/bin/dpkg --search /usr/bin/rpm > /dev/null 2>&1
-                if [ "$?" == "127" ]; then
+                if [ ! -x "$(which dpkg 2>&1>/dev/null)" ]; then
                         # DEB does not exist
                         # Setting as other 64-bit
                         OTHER=1
